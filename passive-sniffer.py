@@ -1,15 +1,29 @@
 import socket
 import struct
 
-
+# Kig op på RAW_SOCKET
+# Access point til rPi
+# rdpcap
+# gem med scapy
 def main():
-    connection = socket.socket(socket.AF_PACKET, socket.SOCK_RAW, socket.ntohs(3))
+
+    host = socket.gethostbyname(socket.gethostname())
+    print('IP: {}'.format(host))
+
+    connection = socket.socket(socket.AF_INET, socket.SOCK_RAW, socket.IPPROTO_IP)
+    connection.bind(host)
+
+    connection.setsockopt(socket.IPPROTO_IP, socket.IP_HDRINCL, 1)
+
+    connection.ioctl(socket.SIO_RCVALL, socket.RCVALL_ON)
 
     while True:
         raw_data, addr = connection.recv(65536)
+
         dest_mac, src_mac, eth_proto, data = unpack_ethernet_frame(raw_data)
+
         print('\nEthernet Frame:')
-        print('Destination: {}, Source {}, Protocol: {}'.format(dest_mac, src_mac, eth_proto))
+        print('Destination MAC: {}, Source MAC: {}, Protocol: {}'.format(dest_mac, src_mac, eth_proto))
 
 
 def unpack_ethernet_frame(data):
@@ -22,6 +36,12 @@ def get_formatted_mac_address(bytes_address):
     bytes_string_list = map('{:02x}'.format, bytes_address)
     formatted_string = ':'.join(bytes_string_list).upper()
     return formatted_string
+
+
+def get_protocol(bytes_protocol):
+    bytes_str = map('{:02x}'.format, bytes_protocol)
+    protocol = ''.join(bytes_str).upper()
+    return protocol
 
 
 if __name__ == '__main__':
